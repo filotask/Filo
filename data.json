@@ -16,6 +16,13 @@
   "projectAssignments": [],
   "notifications": [
     {
+      "id": 1756393638569,
+      "message": "Sync failed, working offline",
+      "type": "warning",
+      "timestamp": "2025-08-28T15:07:18.569Z",
+      "read": false
+    },
+    {
       "id": 1756393618079,
       "message": "Sync failed, working offline",
       "type": "warning",
@@ -360,5 +367,5 @@
     }
   ],
   "messages": [],
-  "lastModified": "2025-08-28T15:07:16.442Z"
+  "lastModified": "2025-08-28T15:07:18.639Z"
 }
