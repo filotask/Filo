@@ -1,135 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FiloTrack - Project Management System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FiloTrack - Project Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ... (your existing CSS) ... */
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-  <h1 class="text-2xl font-bold p-4">FiloTrack Realtime Dashboard</h1>
+    <!-- ... (your existing HTML structure) ... -->
 
-  <!-- Demo Buttons -->
-  <div class="p-4 space-x-2">
-    <button onclick="addDemoUser()" class="bg-green-600 text-white px-4 py-2 rounded">Add Demo User</button>
-    <button onclick="addDemoProject()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Demo Project</button>
-    <button onclick="addDemoTask()" class="bg-purple-600 text-white px-4 py-2 rounded">Add Demo Task</button>
-    <button onclick="addDemoMessage()" class="bg-orange-600 text-white px-4 py-2 rounded">Add Demo Message</button>
-    <button onclick="addDemoNotification()" class="bg-pink-600 text-white px-4 py-2 rounded">Add Demo Notification</button>
-  </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Data Storage with Persistence
+        let currentUser = null;
+        let sidebarCollapsed = false;
+        let notifications = JSON.parse(localStorage.getItem('FiloTrack_notifications')) || [];
+        let isDarkMode = JSON.parse(localStorage.getItem('FiloTrack_darkMode')) || false;
+        let editingUserId = null;
+        let messages = JSON.parse(localStorage.getItem('FiloTrack_messages')) || [];
+        let selectedChatUser = null;
+        
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://kiltzkbpdanhyrvfcbiv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpbHR6a2JwZGFuaHlydmZjYml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjgyNzUsImV4cCI6MjA3MjE0NDI3NX0.-5uNx4506fdgkqyecvM8dLGQ1DhlG-0m1GiLUX3TVQ';
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  <!-- Dashboard Sections -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 p-4">
-    <div>
-      <h2 class="font-semibold mb-2">Users</h2>
-      <div id="usersList" class="space-y-2"></div>
-    </div>
-    <div>
-      <h2 class="font-semibold mb-2">Projects</h2>
-      <div id="projectsList" class="space-y-2"></div>
-    </div>
-    <div>
-      <h2 class="font-semibold mb-2">Tasks</h2>
-      <div id="tasksList" class="space-y-2"></div>
-    </div>
-    <div>
-      <h2 class="font-semibold mb-2">Chat & Notifications</h2>
-      <div>
-        <h3 class="text-sm font-medium mt-2">Messages</h3>
-        <div id="messagesList" class="space-y-2"></div>
-      </div>
-      <div>
-        <h3 class="text-sm font-medium mt-4">Notifications</h3>
-        <div id="notificationsList" class="space-y-2"></div>
-      </div>
-    </div>
-  </div>
+        // Quotes Collection
+        const quotes = [
+            // ... (your existing quotes) ...
+        ];
+        
+        // Default data (used if no data in Supabase or localStorage)
+        const defaultUsers = [
+            // ... (your existing default users) ...
+        ];
+        
+        const defaultProjects = [
+            // ... (your existing default projects) ...
+        ];
 
-  <script>
-    const SUPABASE_URL = "https://kiltzkbpdanhyrvfcbiv.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpbHR6a2JwZGFuaHlydmZjYml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjgyNzUsImV4cCI6MjA3MjE0NDI3NX0.-5uNx4506fdgkqyecvM8dLGQ1DhlG-0m1GiLUX3TVcQ";
+        const defaultTasks = [
+            // ... (your existing default tasks) ...
+        ];
+        
+        // Load data from localStorage or use defaults (will be overridden by Supabase)
+        let users = JSON.parse(localStorage.getItem('FiloTrack_users')) || defaultUsers;
+        let projects = JSON.parse(localStorage.getItem('FiloTrack_projects')) || defaultProjects;
+        let tasks = JSON.parse(localStorage.getItem('FiloTrack_tasks')) || defaultTasks;
+        
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('FiloTrack_users', JSON.stringify(users));
+            localStorage.setItem('FiloTrack_projects', JSON.stringify(projects));
+            localStorage.setItem('FiloTrack_tasks', JSON.stringify(tasks));
+            localStorage.setItem('FiloTrack_notifications', JSON.stringify(notifications));
+            localStorage.setItem('FiloTrack_darkMode', JSON.stringify(isDarkMode));
+            localStorage.setItem('FiloTrack_messages', JSON.stringify(messages));
+            
+            // Save current user session
+            if (currentUser) {
+                localStorage.setItem('FiloTrack_currentUser', JSON.stringify(currentUser));
+            }
+        }
+        
+        // --- Supabase Integration Functions ---
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Function to fetch initial data from Supabase
+        async function fetchInitialData() {
+            try {
+                const { data: fetchedUsers, error: usersError } = await supabase.from('users').select('*');
+                if (usersError) throw usersError;
+                users = fetchedUsers.length > 0 ? fetchedUsers : defaultUsers;
+                
+                const { data: fetchedProjects, error: projectsError } = await supabase.from('projects').select('*');
+                if (projectsError) throw projectsError;
+                projects = fetchedProjects.length > 0 ? fetchedProjects : defaultProjects;
 
-    // USERS
-    async function loadUsers() {
-      const { data, error } = await supabase.from('users').select('*').order('id');
-      if (!error) renderUsers(data);
-    }
-    function renderUsers(users) {
-      const el = document.getElementById('usersList');
-      el.innerHTML = users.length ? users.map(u => `<div class='p-2 border rounded bg-white'>${u.name} (${u.role})</div>`).join('') : '<p class="text-gray-500">No users</p>';
-    }
-    async function addDemoUser() {
-      await supabase.from('users').insert([{ name: 'User ' + Date.now(), email: 'demo@example.com', role: 'staff' }]);
-    }
+                const { data: fetchedTasks, error: tasksError } = await supabase.from('tasks').select('*');
+                if (tasksError) throw tasksError;
+                tasks = fetchedTasks.length > 0 ? fetchedTasks : defaultTasks;
 
-    // PROJECTS
-    async function loadProjects() {
-      const { data, error } = await supabase.from('projects').select('*').order('id');
-      if (!error) renderProjects(data);
-    }
-    function renderProjects(projects) {
-      const el = document.getElementById('projectsList');
-      el.innerHTML = projects.length ? projects.map(p => `<div class='p-2 border rounded bg-white'>${p.name}</div>`).join('') : '<p class="text-gray-500">No projects</p>';
-    }
-    async function addDemoProject() {
-      await supabase.from('projects').insert([{ name: 'Project ' + Date.now(), description: 'Demo project' }]);
-    }
+                const { data: fetchedMessages, error: messagesError } = await supabase.from('messages').select('*');
+                if (messagesError) throw messagesError;
+                messages = fetchedMessages; // Messages might be empty initially
 
-    // TASKS
-    async function loadTasks() {
-      const { data, error } = await supabase.from('tasks').select('*').order('id');
-      if (!error) renderTasks(data);
-    }
-    function renderTasks(tasks) {
-      const el = document.getElementById('tasksList');
-      el.innerHTML = tasks.length ? tasks.map(t => `<div class='p-2 border rounded bg-white'><b>${t.title}</b><br><span class='text-sm'>${t.description||''}</span></div>`).join('') : '<p class="text-gray-500">No tasks</p>';
-    }
-    async function addDemoTask() {
-      await supabase.from('tasks').insert([{ title: 'Task ' + Date.now(), description: 'Demo task description' }]);
-    }
+                // Save fetched data to local storage
+                saveData();
+                console.log('Initial data fetched from Supabase.');
 
-    // MESSAGES
-    async function loadMessages() {
-      const { data, error } = await supabase.from('messages').select('*').order('id');
-      if (!error) renderMessages(data);
-    }
-    function renderMessages(messages) {
-      const el = document.getElementById('messagesList');
-      el.innerHTML = messages.length ? messages.map(m => `<div class='p-2 border rounded bg-white'>${m.sender}: ${m.content}</div>`).join('') : '<p class="text-gray-500">No messages</p>';
-    }
-    async function addDemoMessage() {
-      await supabase.from('messages').insert([{ sender: 'System', content: 'Hello at ' + new Date().toLocaleTimeString() }]);
-    }
+                // After fetching, check if user was previously logged in
+                const savedCurrentUser = localStorage.getItem('FiloTrack_currentUser');
+                if (savedCurrentUser) {
+                    const userData = JSON.parse(savedCurrentUser);
+                    const user = users.find(u => u.id === userData.id);
+                    if (user) {
+                        currentUser = user;
+                        showDashboard();
+                        return;
+                    }
+                }
+                // If not logged in or user not found, initialize login screen
+                const firstNavBtn = document.querySelector('.nav-btn');
+                if (firstNavBtn) {
+                    firstNavBtn.classList.add('bg-blue-600', 'text-white');
+                }
+                updateQuoteDisplay();
 
-    // NOTIFICATIONS
-    async function loadNotifications() {
-      const { data, error } = await supabase.from('notifications').select('*').order('id');
-      if (!error) renderNotifications(data);
-    }
-    function renderNotifications(notifications) {
-      const el = document.getElementById('notificationsList');
-      el.innerHTML = notifications.length ? notifications.map(n => `<div class='p-2 border rounded bg-white text-sm'>${n.message}</div>`).join('') : '<p class="text-gray-500">No notifications</p>';
-    }
-    async function addDemoNotification() {
-      await supabase.from('notifications').insert([{ message: 'New notification at ' + new Date().toLocaleTimeString() }]);
-    }
+            } catch (error) {
+                console.error('Error fetching initial data from Supabase:', error.message);
+                // Fallback to local storage data if Supabase fetch fails
+                console.warn('Falling back to local storage data.');
+                // Proceed with existing local storage data or defaults
+                const savedCurrentUser = localStorage.getItem('FiloTrack_currentUser');
+                if (savedCurrentUser) {
+                    const userData = JSON.parse(savedCurrentUser);
+                    const user = users.find(u => u.id === userData.id);
+                    if (user) {
+                        currentUser = user;
+                        showDashboard();
+                        return;
+                    }
+                }
+                const firstNavBtn = document.querySelector('.nav-btn');
+                if (firstNavBtn) {
+                    firstNavBtn.classList.add('bg-blue-600', 'text-white');
+                }
+                updateQuoteDisplay();
+            }
+        }
 
-    // Realtime subscriptions
-    supabase.channel('users').on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, loadUsers).subscribe();
-    supabase.channel('projects').on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, loadProjects).subscribe();
-    supabase.channel('tasks').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, loadTasks).subscribe();
-    supabase.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMessages).subscribe();
-    supabase.channel('notifications').on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, loadNotifications).subscribe();
+        // Function to set up real-time subscriptions
+        function setupRealtimeSubscriptions() {
+            // Users table subscription
+            supabase
+                .channel('users_changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+                    console.log('User change received!', payload);
+                    if (payload.eventType === 'INSERT') {
+                        users.push(payload.new);
+                    } else if (payload.eventType === 'UPDATE') {
+                        const index = users.findIndex(u => u.id === payload.old.id);
+                        if (index !== -1) users[index] = payload.new;
+                        // If current user is updated, refresh their data
+                        if (currentUser && currentUser.id === payload.old.id) {
+                            currentUser = payload.new;
+                            updateAllProfileDisplays();
+                        }
+                    } else if (payload.eventType === 'DELETE') {
+                        users = users.filter(u => u.id !== payload.old.id);
+                    }
+                    saveData();
+                    renderUsers(); // Re-render user list
+                    renderChatUsers(); // Re-render chat user list
+                })
+                .subscribe();
 
-    // Initial load
-    loadUsers();
-    loadProjects();
-    loadTasks();
-    loadMessages();
-    loadNotifications();
-  </script>
+            // Projects table subscription
+            supabase
+                .channel('projects_changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, payload => {
+                    console.log('Project change received!', payload);
+                    if (payload.eventType === 'INSERT') {
+                        projects.push(payload.new);
+                    } else if (payload.eventType === 'UPDATE') {
+                        const index = projects.findIndex(p => p.id === payload.old.id);
+                        if (index !== -1) projects[index] = payload.new;
+                    } else if (payload.eventType === 'DELETE') {
+                        projects = projects.filter(p => p.id !== payload.old.id);
+                        // Also remove associated tasks
+                        tasks = tasks.filter(t => t.projectId !== payload.old.id);
+                    }
+                    saveData();
+                    renderProjects(); // Re-render project list
+                    renderDashboardCards(); // Update dashboard counts
+                    populateProjectDropdown(); // Update project dropdowns in modals
+                })
+                .subscribe();
+
+            // Tasks table subscription
+            supabase
+                .channel('tasks_changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+                    console.log('Task change received!', payload);
+                    if (payload.eventType === 'INSERT') {
+                        tasks.push(payload.new);
+                        // Notify assignee if it's a new task and not created by them
+                        if (payload.new.assignee !== currentUser.id) {
+                            const assignedUser = users.find(u => u.id === payload.new.assignee);
+                            if (assignedUser) {
+                                createNotification(
+                                    assignedUser.id,
+                                    'task_assigned',
+                                    `You have been assigned a new task: "${payload.new.title}" by ${currentUser.name}`,
+                                    payload.new.id
+                                );
+                            }
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const index = tasks.findIndex(t => t.id === payload.old.id);
+                        if (index !== -1) {
+                            const oldTask = tasks[index];
+                            tasks[index] = payload.new;
+
+                            // Notify if assignee changed
+                            if (oldTask.assignee !== payload.new.assignee && payload.new.assignee !== currentUser.id) {
+                                const assignedUser = users.find(u => u.id === payload.new.assignee);
+                                if (assignedUser) {
+                                    createNotification(
+                                        assignedUser.id,
+                                        'task_assigned',
+                                        `Task "${payload.new.title}" has been reassigned to you by ${currentUser.name}`,
+                                        payload.new.id
+                                    );
+                                }
+                            }
+                            // Notify admin/creator if status changed by assignee
+                            if (oldTask.status !== payload.new.status && currentUser.id === oldTask.assignee && currentUser.role !== 'admin') {
+                                const admin = users.find(u => u.role === 'admin');
+                                const creator = users.find(u => u.id === oldTask.createdBy);
+                                if (admin) {
+                                    createNotification(
+                                        admin.id,
+                                        'task_status_changed',
+                                        `${currentUser.name} changed task "${payload.new.title}" status from ${oldTask.status.replace('-', ' ')} to ${payload.new.status.replace('-', ' ')}`,
+                                        payload.new.id
+                                    );
+                                }
+                                if (creator && creator.id !== admin.id) {
+                                    createNotification(
+                                        creator.id,
+                                        'task_status_changed',
+                                        `${currentUser.name} changed task "${payload.new.title}" status from ${oldTask.status.replace('-', ' ')} to ${payload.new.status.replace('-', ' ')}`,
+                                        payload.new.id
+                                    );
+                                }
+                            }
+                        }
+                    } else if (payload.eventType === 'DELETE') {
+                        tasks = tasks.filter(t => t.id !== payload.old.id);
+                    }
+                    saveData();
+                    renderTasks(); // Re-render task list
+                    renderDashboardCards(); // Update dashboard counts
+                })
+                .subscribe();
+
+            // Messages table subscription
+            supabase
+                .channel('messages_changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+                    console.log('Message change received!', payload);
+                    if (payload.eventType === 'INSERT') {
+                        messages.push(payload.new);
+                        // If the new message is for the current user and not from them
+                        if (payload.new.receiverId === currentUser.id && payload.new.senderId !== currentUser.id) {
+                            const sender = users.find(u => u.id === payload.new.senderId);
+                            if (sender) {
+                                createNotification(
+                                    currentUser.id,
+                                    'new_message',
+                                    `New message from ${sender.name}: ${payload.new.content.substring(0, 50)}${payload.new.content.length > 50 ? '...' : ''}`,
+                                    null, // No task ID
+                                    payload.new.id
+                                );
+                                showBrowserNotification(`New message from ${sender.name}`, payload.new.content);
+                            }
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const index = messages.findIndex(m => m.id === payload.old.id);
+                        if (index !== -1) messages[index] = payload.new;
+                    } else if (payload.eventType === 'DELETE') {
+                        messages = messages.filter(m => m.id !== payload.old.id);
+                    }
+                    saveData();
+                    renderChatUsers(); // Update chat user list (last message, unread count)
+                    if (selectedChatUser && (payload.new.senderId === selectedChatUser.id || payload.new.receiverId === selectedChatUser.id || payload.old.senderId === selectedChatUser.id || payload.old.receiverId === selectedChatUser.id)) {
+                        renderChatMessages(); // Re-render current chat conversation
+                    }
+                })
+                .subscribe();
+        }
+
+        // --- End Supabase Integration Functions ---
+
+        // Initialize data on first load
+        document.addEventListener('DOMContentLoaded', function() {
+            applyNightMode();
+            document.getElementById('nightModeToggle').addEventListener('click', toggleNightMode);
+            
+            // Fetch initial data and set up subscriptions
+            fetchInitialData();
+            setupRealtimeSubscriptions();
+        });
+
+        // ... (rest of your existing JavaScript functions) ...
+
+        // Modify login form submission to interact with Supabase
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Authenticate with Supabase (example: using signInWithPassword)
+            // Note: For a real application, you'd use Supabase Auth methods like signInWithPassword
+            // For this demo, we'll continue to use the local 'users' array for simplicity,
+            // but the data itself will be synced via real-time subscriptions.
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                saveData();
+                showDashboard();
+            } else {
+                alert('Invalid credentials. Please try the demo accounts provided.');
+            }
+        });
+
+        // Modify data creation/update/deletion functions to interact with Supabase
+        // Example for adding a new user:
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value, // In a real app, hash this!
+                phone: document.getElementById('userPhone').value,
+                address: document.getElementById('userAddress').value,
+                profilePicture: window.newUserProfilePicture || '',
+                role: document.getElementById('userRole').value === 'custom' ? 
+                      document.getElementById('customRoleInput').value : 
+                      document.getElementById('userRole').value
+            };
+
+            if (editingUserId) {
+                // Update existing user in Supabase
+                const { data, error } = await supabase
+                    .from('users')
+                    .update(userData)
+                    .eq('id', editingUserId)
+                    .select();
+                if (error) {
+                    console.error('Error updating user:', error.message);
+                    alert('Failed to update user.');
+                } else {
+                    console.log('User updated in Supabase:', data);
+                    // Local data will be updated by the real-time subscription
+                }
+                editingUserId = null;
+            } else {
+                // Create new user in Supabase
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([userData])
+                    .select();
+                if (error) {
+                    console.error('Error creating user:', error.message);
+                    alert('Failed to create user.');
+                } else {
+                    console.log('User created in Supabase:', data);
+                    // Local data will be updated by the real-time subscription
+                }
+            }
+            
+            document.getElementById('userModal').classList.add('hidden');
+            document.getElementById('userForm').reset();
+            window.newUserProfilePicture = null;
+            window.editUserProfilePicture = null;
+            // renderUsers() will be called by the real-time subscription
+        });
+
+        // Example for deleting a user:
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                supabase
+                    .from('users')
+                    .delete()
+                    .eq('id', userId)
+                    .then(({ error }) => {
+                        if (error) {
+                            console.error('Error deleting user:', error.message);
+                            alert('Failed to delete user.');
+                        } else {
+                            console.log('User deleted in Supabase.');
+                            // Local data will be updated by the real-time subscription
+                        }
+                    });
+            }
+        }
+
+        // Example for adding a new project:
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const projectData = {
+                name: document.getElementById('projectName').value,
+                description: document.getElementById('projectDescription').value,
+                status: 'active', // Default status
+                createdBy: currentUser.id,
+                startDate: document.getElementById('projectStartDate').value,
+                endDate: document.getElementById('projectEndDate').value
+            };
+
+            if (window.editingProjectId) {
+                // Update existing project in Supabase
+                const { data, error } = await supabase
+                    .from('projects')
+                    .update(projectData)
+                    .eq('id', window.editingProjectId)
+                    .select();
+                if (error) {
+                    console.error('Error updating project:', error.message);
+                    alert('Failed to update project.');
+                } else {
+                    console.log('Project updated in Supabase:', data);
+                }
+                window.editingProjectId = null;
+            } else {
+                // Create new project in Supabase
+                const { data, error } = await supabase
+                    .from('projects')
+                    .insert([projectData])
+                    .select();
+                if (error) {
+                    console.error('Error creating project:', error.message);
+                    alert('Failed to create project.');
+                } else {
+                    console.log('Project created in Supabase:', data);
+                }
+            }
+            
+            document.getElementById('projectModal').classList.add('hidden');
+            document.getElementById('projectForm').reset();
+            document.querySelector('#projectModal h3').textContent = 'Add New Project';
+            document.querySelector('#projectForm button[type="submit"]').textContent = 'Create Project';
+            // renderProjects() will be called by the real-time subscription
+        });
+
+        // Example for deleting a project:
+        function deleteProject(projectId) {
+            if (confirm('Are you sure you want to delete this project? All associated tasks will also be deleted.')) {
+                supabase
+                    .from('projects')
+                    .delete()
+                    .eq('id', projectId)
+                    .then(({ error }) => {
+                        if (error) {
+                            console.error('Error deleting project:', error.message);
+                            alert('Failed to delete project.');
+                        } else {
+                            console.log('Project deleted in Supabase.');
+                            // Associated tasks will also be deleted if you set up foreign key constraints with CASCADE DELETE in Supabase.
+                            // Otherwise, you'd need to delete them explicitly here.
+                            supabase.from('tasks').delete().eq('projectId', projectId).then(({ error: taskError }) => {
+                                if (taskError) console.error('Error deleting associated tasks:', taskError.message);
+                            });
+                        }
+                    });
+            }
+        }
+
+        // Example for adding a new task:
+        document.getElementById('taskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                projectId: parseInt(document.getElementById('taskProject').value),
+                assignee: parseInt(document.getElementById('taskAssignee').value),
+                priority: document.getElementById('taskPriority').value,
+                status: 'todo', // Default status for new tasks
+                createdBy: currentUser.id,
+                dueDate: document.getElementById('taskDueDate').value
+            };
+
+            if (window.editingTaskId) {
+                // Update existing task in Supabase
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .update(taskData)
+                    .eq('id', window.editingTaskId)
+                    .select();
+                if (error) {
+                    console.error('Error updating task:', error.message);
+                    alert('Failed to update task.');
+                } else {
+                    console.log('Task updated in Supabase:', data);
+                }
+                window.editingTaskId = null;
+            } else {
+                // Create new task in Supabase
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .insert([taskData])
+                    .select();
+                if (error) {
+                    console.error('Error creating task:', error.message);
+                    alert('Failed to create task.');
+                } else {
+                    console.log('Task created in Supabase:', data);
+                }
+            }
+            
+            document.getElementById('taskModal').classList.add('hidden');
+            document.getElementById('taskForm').reset();
+            document.querySelector('#taskModal h3').textContent = 'Add New Task';
+            document.querySelector('#taskForm button[type="submit"]').textContent = 'Create Task';
+            // renderTasks() and renderDashboardCards() will be called by the real-time subscription
+        });
+
+        // Example for updating task status:
+        async function updateTaskStatus(taskId, newStatus) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .update({ status: newStatus })
+                    .eq('id', taskId)
+                    .select();
+                if (error) {
+                    console.error('Error updating task status:', error.message);
+                    alert('Failed to update task status.');
+                } else {
+                    console.log('Task status updated in Supabase:', data);
+                    // Local data and UI will be updated by the real-time subscription
+                }
+            }
+        }
+
+        // Example for deleting a task:
+        function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                supabase
+                    .from('tasks')
+                    .delete()
+                    .eq('id', taskId)
+                    .then(({ error }) => {
+                        if (error) {
+                            console.error('Error deleting task:', error.message);
+                            alert('Failed to delete task.');
+                        } else {
+                            console.log('Task deleted in Supabase.');
+                            // Local data and UI will be updated by the real-time subscription
+                        }
+                    });
+            }
+        }
+
+        // Example for sending a chat message:
+        async function sendMessage() {
+            if (!selectedChatUser) return;
+            
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            const messageData = {
+                senderId: currentUser.id,
+                receiverId: selectedChatUser.id,
+                content: content,
+                timestamp: new Date().toISOString(),
+                read: false
+            };
+            
+            const { data, error } = await supabase
+                .from('messages')
+                .insert([messageData])
+                .select();
+            
+            if (error) {
+                console.error('Error sending message:', error.message);
+                alert('Failed to send message.');
+            } else {
+                console.log('Message sent via Supabase:', data);
+                messageInput.value = '';
+                // Local data and UI will be updated by the real-time subscription
+            }
+        }
+
+        // Example for marking messages as read:
+        async function markMessagesAsRead(currentUserId, otherUserId) {
+            // Get unread messages from the other user to the current user
+            const unreadMessages = messages.filter(m => 
+                m.senderId === otherUserId && 
+                m.receiverId === currentUserId && 
+                !m.read
+            );
+
+            if (unreadMessages.length > 0) {
+                const messageIdsToUpdate = unreadMessages.map(m => m.id);
+                const { data, error } = await supabase
+                    .from('messages')
+                    .update({ read: true })
+                    .in('id', messageIdsToUpdate)
+                    .select();
+                
+                if (error) {
+                    console.error('Error marking messages as read:', error.message);
+                } else {
+                    console.log('Messages marked as read in Supabase:', data);
+                    // Local data and UI will be updated by the real-time subscription
+                }
+            }
+        }
+
+        // ... (rest of your existing JavaScript functions) ...
+    </script>
 </body>
 </html>
