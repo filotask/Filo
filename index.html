@@ -3,128 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Management Dashboard</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .section { margin-bottom: 30px; }
-    input, select, button { margin: 5px; padding: 5px; }
-    ul { list-style-type: none; padding: 0; }
-    li { margin: 5px 0; padding: 5px; border: 1px solid #ccc; border-radius: 5px; }
-  </style>
+  <title>FiloTrack - Project Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-  <h1>Project Management Dashboard (Supabase)</h1>
+<body class="bg-gray-100 min-h-screen">
+  <h1 class="text-2xl font-bold p-4">FiloTrack Realtime Dashboard</h1>
 
-  <div class="section">
-    <h2>Add User</h2>
-    <input type="text" id="userName" placeholder="Name">
-    <input type="email" id="userEmail" placeholder="Email">
-    <input type="text" id="userRole" placeholder="Role">
-    <button onclick="addUser()">Add User</button>
-    <ul id="userList"></ul>
+  <!-- Demo Buttons -->
+  <div class="p-4 space-x-2">
+    <button onclick="addDemoUser()" class="bg-green-600 text-white px-4 py-2 rounded">Add Demo User</button>
+    <button onclick="addDemoProject()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Demo Project</button>
+    <button onclick="addDemoTask()" class="bg-purple-600 text-white px-4 py-2 rounded">Add Demo Task</button>
+    <button onclick="addDemoMessage()" class="bg-orange-600 text-white px-4 py-2 rounded">Add Demo Message</button>
+    <button onclick="addDemoNotification()" class="bg-pink-600 text-white px-4 py-2 rounded">Add Demo Notification</button>
   </div>
 
-  <div class="section">
-    <h2>Add Project</h2>
-    <input type="text" id="projectName" placeholder="Project Name">
-    <input type="text" id="projectDesc" placeholder="Description">
-    <button onclick="addProject()">Add Project</button>
-    <ul id="projectList"></ul>
-  </div>
-
-  <div class="section">
-    <h2>Add Task</h2>
-    <input type="text" id="taskTitle" placeholder="Task Title">
-    <input type="text" id="taskDesc" placeholder="Description">
-    <button onclick="addTask()">Add Task</button>
-    <ul id="taskList"></ul>
+  <!-- Dashboard Sections -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 p-4">
+    <div>
+      <h2 class="font-semibold mb-2">Users</h2>
+      <div id="usersList" class="space-y-2"></div>
+    </div>
+    <div>
+      <h2 class="font-semibold mb-2">Projects</h2>
+      <div id="projectsList" class="space-y-2"></div>
+    </div>
+    <div>
+      <h2 class="font-semibold mb-2">Tasks</h2>
+      <div id="tasksList" class="space-y-2"></div>
+    </div>
+    <div>
+      <h2 class="font-semibold mb-2">Chat & Notifications</h2>
+      <div>
+        <h3 class="text-sm font-medium mt-2">Messages</h3>
+        <div id="messagesList" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="text-sm font-medium mt-4">Notifications</h3>
+        <div id="notificationsList" class="space-y-2"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const { createClient } = supabase;
-    const supa = createClient(
-      "https://kiltzkbpdanhyrvfcbiv.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpbHR6a2JwZGFuaHlydmZjYml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjgyNzUsImV4cCI6MjA3MjE0NDI3NX0.-5uNx4506fdgkqyecvM8dLGQ1DhlG-0m1GiLUX3TVcQ"
-    );
+    const SUPABASE_URL = "https://kiltzkbpdanhyrvfcbiv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpbHR6a2JwZGFuaHlydmZjYml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjgyNzUsImV4cCI6MjA3MjE0NDI3NX0.-5uNx4506fdgkqyecvM8dLGQ1DhlG-0m1GiLUX3TVcQ";
 
-    // ---------- USERS ----------
-    async function addUser() {
-      const name = document.getElementById('userName').value;
-      const email = document.getElementById('userEmail').value;
-      const role = document.getElementById('userRole').value;
-      const { data, error } = await supa.from('users').insert([{ name, email, role, password: 'demo' }]);
-      if (error) console.error(error);
-      else console.log("User added", data);
-    }
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // USERS
     async function loadUsers() {
-      let { data, error } = await supa.from('users').select('*');
-      if (!error) {
-        const list = document.getElementById('userList');
-        list.innerHTML = "";
-        data.forEach(u => {
-          list.innerHTML += `<li>${u.name} (${u.role})</li>`;
-        });
-      }
+      const { data, error } = await supabase.from('users').select('*').order('id');
+      if (!error) renderUsers(data);
+    }
+    function renderUsers(users) {
+      const el = document.getElementById('usersList');
+      el.innerHTML = users.length ? users.map(u => `<div class='p-2 border rounded bg-white'>${u.name} (${u.role})</div>`).join('') : '<p class="text-gray-500">No users</p>';
+    }
+    async function addDemoUser() {
+      await supabase.from('users').insert([{ name: 'User ' + Date.now(), email: 'demo@example.com', role: 'staff' }]);
     }
 
-    supa.channel('users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, loadUsers)
-      .subscribe();
-
-    // ---------- PROJECTS ----------
-    async function addProject() {
-      const name = document.getElementById('projectName').value;
-      const description = document.getElementById('projectDesc').value;
-      const { data, error } = await supa.from('projects').insert([{ name, description }]);
-      if (error) console.error(error);
-      else console.log("Project added", data);
-    }
-
+    // PROJECTS
     async function loadProjects() {
-      let { data, error } = await supa.from('projects').select('*');
-      if (!error) {
-        const list = document.getElementById('projectList');
-        list.innerHTML = "";
-        data.forEach(p => {
-          list.innerHTML += `<li>${p.name} - ${p.status}</li>`;
-        });
-      }
+      const { data, error } = await supabase.from('projects').select('*').order('id');
+      if (!error) renderProjects(data);
+    }
+    function renderProjects(projects) {
+      const el = document.getElementById('projectsList');
+      el.innerHTML = projects.length ? projects.map(p => `<div class='p-2 border rounded bg-white'>${p.name}</div>`).join('') : '<p class="text-gray-500">No projects</p>';
+    }
+    async function addDemoProject() {
+      await supabase.from('projects').insert([{ name: 'Project ' + Date.now(), description: 'Demo project' }]);
     }
 
-    supa.channel('projects')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, loadProjects)
-      .subscribe();
-
-    // ---------- TASKS ----------
-    async function addTask() {
-      const title = document.getElementById('taskTitle').value;
-      const description = document.getElementById('taskDesc').value;
-      const { data, error } = await supa.from('tasks').insert([{ title, description }]);
-      if (error) console.error(error);
-      else console.log("Task added", data);
-    }
-
+    // TASKS
     async function loadTasks() {
-      let { data, error } = await supa.from('tasks').select('*');
-      if (!error) {
-        const list = document.getElementById('taskList');
-        list.innerHTML = "";
-        data.forEach(t => {
-          list.innerHTML += `<li>${t.title} - ${t.status}</li>`;
-        });
-      }
+      const { data, error } = await supabase.from('tasks').select('*').order('id');
+      if (!error) renderTasks(data);
+    }
+    function renderTasks(tasks) {
+      const el = document.getElementById('tasksList');
+      el.innerHTML = tasks.length ? tasks.map(t => `<div class='p-2 border rounded bg-white'><b>${t.title}</b><br><span class='text-sm'>${t.description||''}</span></div>`).join('') : '<p class="text-gray-500">No tasks</p>';
+    }
+    async function addDemoTask() {
+      await supabase.from('tasks').insert([{ title: 'Task ' + Date.now(), description: 'Demo task description' }]);
     }
 
-    supa.channel('tasks')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, loadTasks)
-      .subscribe();
+    // MESSAGES
+    async function loadMessages() {
+      const { data, error } = await supabase.from('messages').select('*').order('id');
+      if (!error) renderMessages(data);
+    }
+    function renderMessages(messages) {
+      const el = document.getElementById('messagesList');
+      el.innerHTML = messages.length ? messages.map(m => `<div class='p-2 border rounded bg-white'>${m.sender}: ${m.content}</div>`).join('') : '<p class="text-gray-500">No messages</p>';
+    }
+    async function addDemoMessage() {
+      await supabase.from('messages').insert([{ sender: 'System', content: 'Hello at ' + new Date().toLocaleTimeString() }]);
+    }
 
-    // Load initial data
+    // NOTIFICATIONS
+    async function loadNotifications() {
+      const { data, error } = await supabase.from('notifications').select('*').order('id');
+      if (!error) renderNotifications(data);
+    }
+    function renderNotifications(notifications) {
+      const el = document.getElementById('notificationsList');
+      el.innerHTML = notifications.length ? notifications.map(n => `<div class='p-2 border rounded bg-white text-sm'>${n.message}</div>`).join('') : '<p class="text-gray-500">No notifications</p>';
+    }
+    async function addDemoNotification() {
+      await supabase.from('notifications').insert([{ message: 'New notification at ' + new Date().toLocaleTimeString() }]);
+    }
+
+    // Realtime subscriptions
+    supabase.channel('users').on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, loadUsers).subscribe();
+    supabase.channel('projects').on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, loadProjects).subscribe();
+    supabase.channel('tasks').on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, loadTasks).subscribe();
+    supabase.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, loadMessages).subscribe();
+    supabase.channel('notifications').on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, loadNotifications).subscribe();
+
+    // Initial load
     loadUsers();
     loadProjects();
     loadTasks();
+    loadMessages();
+    loadNotifications();
   </script>
 </body>
 </html>
