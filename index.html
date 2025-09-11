@@ -464,7 +464,7 @@
                         </button>
                         
                         <!-- Admin Navigation -->
-                        <button id="adminNav" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors hidden" data-section="admin">
+                        <button id="AdminNav" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors hidden" data-section="Admin">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                             </svg>
@@ -556,7 +556,7 @@
                 </div>
 
                 <!-- Admin Section -->
-                <div id="adminSection" class="section hidden p-6 h-full overflow-y-auto">
+                <div id="AdminSection" class="section hidden p-6 h-full overflow-y-auto">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold text-gray-800">User Management</h2>
                         <button id="addUserBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
@@ -820,7 +820,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
                         <select id="userRole" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="toggleCustomRole()">
                             <option value="staff">Staff</option>
-                            <option value="admin">Admin</option>
+                            <option value="Admin">Admin</option>
                             <option value="trainee">Trainee</option>
                             <option value="manager">Manager</option>
                             <option value="custom">Custom Role</option>
@@ -1386,13 +1386,13 @@
             // Update all profile displays
             updateAllProfileDisplays();
             
-            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
-                document.getElementById('adminNav').classList.remove('hidden');
+            if (currentUser.role === 'Admin' || currentUser.role === 'manager') {
+                document.getElementById('AdminNav').classList.remove('hidden');
             } else {
-                document.getElementById('adminNav').classList.add('hidden');
+                document.getElementById('AdminNav').classList.add('hidden');
             }
             
-            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+            if (currentUser.role === 'Admin' || currentUser.role === 'manager') {
                 document.getElementById('addTaskBtn').classList.remove('hidden');
                 document.getElementById('addProjectBtn').classList.remove('hidden');
             }
@@ -1473,7 +1473,7 @@
                 renderTasks();
             } else if (sectionName === 'projects') {
                 renderProjects();
-            } else if (sectionName === 'admin') {
+            } else if (sectionName === 'Admin') {
                 renderUsers();
             } else if (sectionName === 'dashboard') {
                 renderDashboardCards();
@@ -1573,7 +1573,7 @@
         // Project Management
         function renderProjects() {
             const projectsList = document.getElementById('projectsList');
-            const userProjects = currentUser.role === 'admin' ? projects : projects.filter(p => {
+            const userProjects = currentUser.role === 'Admin' ? projects : projects.filter(p => {
                 // Show projects that have tasks assigned to the user
                 return tasks.some(t => t.projectId === p.id && t.assignee === currentUser.id);
             });
@@ -1625,13 +1625,13 @@
                                     <button onclick="viewProjectTasks(${project.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                         View Tasks (${totalTasks})
                                     </button>
-                                    ${(currentUser.role === 'admin' || currentUser.role === 'manager') ? `
+                                    ${(currentUser.role === 'Admin' || currentUser.role === 'manager') ? `
                                         <button onclick="addTaskToProject(${project.id})" class="text-green-600 hover:text-green-800 text-sm font-medium">
                                             + Add Task
                                         </button>
                                     ` : ''}
                                 </div>
-                                ${(currentUser.role === 'admin' || currentUser.role === 'manager') ? `
+                                ${(currentUser.role === 'Admin' || currentUser.role === 'manager') ? `
                                     <div class="flex space-x-2">
                                         <button onclick="editProject(${project.id})" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
                                         <button onclick="deleteProject(${project.id})" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
@@ -1678,7 +1678,7 @@
         // Task Management
         function renderTasks() {
             const tasksList = document.getElementById('tasksList');
-            let userTasks = currentUser.role === 'admin' ? tasks : tasks.filter(t => t.assignee === currentUser.id);
+            let userTasks = currentUser.role === 'Admin' ? tasks : tasks.filter(t => t.assignee === currentUser.id);
             
             // Apply filters if set
             let headerText = 'Tasks';
@@ -1767,14 +1767,14 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex space-x-2">
-                                ${(currentUser.role === 'admin' || currentUser.role === 'manager' || task.assignee === currentUser.id) ? `
+                                ${(currentUser.role === 'Admin' || currentUser.role === 'manager' || task.assignee === currentUser.id) ? `
                                     <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
                                 ` : ''}
-                                ${(currentUser.role === 'admin' || currentUser.role === 'manager') ? `
+                                ${(currentUser.role === 'Admin' || currentUser.role === 'manager') ? `
                                     <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
                                 ` : ''}
                             </div>
-                            ${(task.assignee === currentUser.id || (currentUser.role === 'admin' && task.assignee !== users.find(u => u.role === 'manager')?.id)) ? `
+                            ${(task.assignee === currentUser.id || (currentUser.role === 'Admin' && task.assignee !== users.find(u => u.role === 'manager')?.id)) ? `
                                 <select onchange="updateTaskStatus(${task.id}, this.value)" class="px-3 py-1 border border-gray-300 rounded text-sm">
                                     <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
                                     <option value="ongoing" ${task.status === 'ongoing' ? 'selected' : ''}>Ongoing</option>
@@ -1797,21 +1797,21 @@
                 const oldStatus = task.status;
                 task.status = newStatus;
                 
-                // Create notification for admin and task creator if status changed by assignee
-                if (currentUser.id === task.assignee && currentUser.role !== 'admin') {
-                    const admin = users.find(u => u.role === 'admin');
+                // Create notification for Admin and task creator if status changed by assignee
+                if (currentUser.id === task.assignee && currentUser.role !== 'Admin') {
+                    const Admin = users.find(u => u.role === 'Admin');
                     const creator = users.find(u => u.id === task.createdBy);
                     
-                    if (admin) {
+                    if (Admin) {
                         createNotification(
-                            admin.id,
+                            Admin.id,
                             'task_status_changed',
                             `${currentUser.name} changed task "${task.title}" status from ${oldStatus.replace('-', ' ')} to ${newStatus.replace('-', ' ')}`,
                             taskId
                         );
                     }
                     
-                    if (creator && creator.id !== admin.id) {
+                    if (creator && creator.id !== Admin.id) {
                         createNotification(
                             creator.id,
                             'task_status_changed',
@@ -1972,9 +1972,9 @@
             let availableUsers = [];
             
             if (currentUser.role === 'manager') {
-                // Manager can assign to everyone including admin
+                // Manager can assign to everyone including Admin
                 availableUsers = users;
-            } else if (currentUser.role === 'admin') {
+            } else if (currentUser.role === 'Admin') {
                 // Admin can assign to everyone except manager
                 availableUsers = users.filter(u => u.role !== 'manager');
             } else {
@@ -2024,7 +2024,7 @@
                         <div class="text-sm text-gray-500">${user.address ? user.address.substring(0, 30) + (user.address.length > 30 ? '...' : '') : 'No address'}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : user.role === 'trainee' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : user.role === 'trainee' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
                             ${user.role}
                         </span>
                     </td>
@@ -2310,7 +2310,7 @@
             document.getElementById('userAddress').value = user.address || '';
             
             // Handle custom roles
-            const standardRoles = ['staff', 'admin', 'trainee', 'manager'];
+            const standardRoles = ['staff', 'Admin', 'trainee', 'manager'];
             if (standardRoles.includes(user.role)) {
                 document.getElementById('userRole').value = user.role;
                 document.getElementById('customRoleInput').classList.add('hidden');
@@ -2395,7 +2395,7 @@
         // Task Details Modal Functions
         function showTaskDetails(status) {
             const statusTasks = tasks.filter(t => {
-                if (currentUser.role === 'admin') {
+                if (currentUser.role === 'Admin') {
                     return t.status === status;
                 } else {
                     return t.status === status && t.assignee === currentUser.id;
@@ -2850,6 +2850,7 @@
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97446a3f248a7f60',t:'MTc1NjA1NDkyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
 
